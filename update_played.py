@@ -57,14 +57,12 @@ for year in grouped_tracks.keys():
         old_tracks = []
 
         #load old tracks
-        filename = utils.get_monthly_filename('data', 'spotify', 'json', int(year), int(month))
+        filename = utils.get_monthly_filename('data', 'spotify_tracks', 'json', int(year), int(month))
         if os.path.exists(filename):
             with open(filename, 'r') as f:
                 old_tracks = json.load(f)
         print(filename)
-        print('old_tracks: {}, new_tracks: {}'.format(len(old_tracks), len(new_tracks)))
         old_tracks.extend(new_tracks)
-        print('extended_Tracks: {}'.format(len(old_tracks)))
         track_dict = {}
         for track in old_tracks:
             track_dict[track['played_at']] = track
