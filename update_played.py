@@ -5,6 +5,7 @@ import spotipy
 import json
 import utils
 import sys
+import logging
 
 # string constant
 NOT_SET_VALUE = 'NOT SET'
@@ -14,6 +15,8 @@ config_parser.read('config.ini')
 client_id = config_parser.get('Login Parameters', 'client_id', fallback=NOT_SET_VALUE)
 client_secret = config_parser.get('Login Parameters', 'client_secret', fallback=NOT_SET_VALUE)
 access_token = config_parser.get('Login Parameters', 'access_token', fallback=NOT_SET_VALUE)
+logging_level = config_parser.get('logging', 'logging_level', fallback=logging.INFO)
+logging_file = config_parser.get('logging', 'logging_file', fallback=None)
 
 if os.environ.get("SPOTIPY_CLIENT_ID", NOT_SET_VALUE) is NOT_SET_VALUE:
     if client_id is NOT_SET_VALUE:
@@ -27,16 +30,23 @@ if os.environ.get("SPOTIPY_CLIENT_SECRET", NOT_SET_VALUE) is NOT_SET_VALUE:
         sys.exit(1)
     os.environ['SPOTIPY_CLIENT_SECRET'] = client_secret
 
+if logging_file:
+    logging.basicConfig(filename=logging_file, level=logging_level, format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S %z')
+else:
+    logging.basicConfig(level=logging_level, format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S %z')
+
 token = spotipy.util.prompt_for_user_token('intonarumori', 'user-library-read user-read-recently-played playlist-read-private playlist-read-collaborative user-top-read', client_id, client_secret, redirect_uri='https://127.0.0.1:8080')
 
 sp = spotipy.Spotify(auth=token)
 played_tracks = []
 results = sp.current_user_recently_played()
 played_tracks.extend(results['items'])
+logging.info('loaded %d tracks', len(played_tracks))
 cursors = results['cursors']
 while cursors is not None:
     results = sp.current_user_recently_played(before=cursors['before'])
     played_tracks.extend(results['items'])
+    logging.info('loaded %d tracks', len(played_tracks))
     cursors = results['cursors']
 
 # group tracks by year and month
@@ -52,7 +62,7 @@ for track in played_tracks:
 
 for year in grouped_tracks.keys():
     for month in grouped_tracks[year]:
-        print('adding tracks for {}-{}'.format(year, month))
+        logging.info('adding tracks for %s-%s', year, month)
         new_tracks = grouped_tracks[year][month]
         old_tracks = []
 
@@ -61,7 +71,7 @@ for year in grouped_tracks.keys():
         if os.path.exists(filename):
             with open(filename, 'r') as f:
                 old_tracks = json.load(f)
-        print(filename)
+        logging.info('writing %s', filename)
         old_tracks.extend(new_tracks)
         track_dict = {}
         for track in old_tracks:
