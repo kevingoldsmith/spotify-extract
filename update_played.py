@@ -30,10 +30,20 @@ if os.environ.get("SPOTIPY_CLIENT_SECRET", NOT_SET_VALUE) is NOT_SET_VALUE:
         sys.exit(1)
     os.environ['SPOTIPY_CLIENT_SECRET'] = client_secret
 
+logger = logging.getLogger('update_played')
+logger.setLevel(logging_level)
+formatter = logging.Formatter('%(name)s - %(asctime)s (%(levelname)s): %(message)s')
+formatter.datefmt = '%Y-%m-%d %H:%M:%S %z'
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+
 if logging_file:
-    logging.basicConfig(filename=logging_file, level=logging_level, format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S %z')
-else:
-    logging.basicConfig(level=logging_level, format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S %z')
+    fh = logging.FileHandler(logging_file)
+    fh.setLevel(logging_level)
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
 
 token = spotipy.util.prompt_for_user_token('intonarumori', 'user-library-read user-read-recently-played playlist-read-private playlist-read-collaborative user-top-read', client_id, client_secret, redirect_uri='https://127.0.0.1:8080')
 
@@ -41,13 +51,13 @@ sp = spotipy.Spotify(auth=token)
 played_tracks = []
 results = sp.current_user_recently_played()
 played_tracks.extend(results['items'])
-logging.info('loaded %d tracks', len(played_tracks))
+logger.info('loaded %d tracks', len(played_tracks))
 cursors = results['cursors']
 while cursors is not None:
     results = sp.current_user_recently_played(before=cursors['before'])
     if len(results['items']) > 0:
         played_tracks.extend(results['items'])
-        logging.info('loaded %d tracks', len(played_tracks))
+        logger.info('loaded %d tracks', len(played_tracks))
     cursors = results['cursors']
 
 # group tracks by year and month
@@ -63,16 +73,17 @@ for track in played_tracks:
 
 for year in grouped_tracks.keys():
     for month in grouped_tracks[year]:
-        logging.info('adding tracks for %s-%s', year, month)
+        logger.info('adding tracks for %s-%s', year, month)
         new_tracks = grouped_tracks[year][month]
         old_tracks = []
 
         #load old tracks
         filename = utils.get_monthly_filename('data', 'spotify_tracks', 'json', int(year), int(month))
         if os.path.exists(filename):
+            logger.info('loading %s', filename)
             with open(filename, 'r') as f:
                 old_tracks = json.load(f)
-        logging.info('writing %s', filename)
+        
         old_tracks.extend(new_tracks)
         track_dict = {}
         for track in old_tracks:
@@ -80,7 +91,9 @@ for year in grouped_tracks.keys():
         final_list = []
         for played_time in sorted(track_dict.keys()):
             final_list.append(track_dict[played_time])
+
         with open(filename, 'w') as f:
+            logger.info('writing %s', filename)    
             f.write(json.dumps(final_list))
 
 
