@@ -45,8 +45,9 @@ logging.info('loaded %d tracks', len(played_tracks))
 cursors = results['cursors']
 while cursors is not None:
     results = sp.current_user_recently_played(before=cursors['before'])
-    played_tracks.extend(results['items'])
-    logging.info('loaded %d tracks', len(played_tracks))
+    if len(results['items']) > 0:
+        played_tracks.extend(results['items'])
+        logging.info('loaded %d tracks', len(played_tracks))
     cursors = results['cursors']
 
 # group tracks by year and month
