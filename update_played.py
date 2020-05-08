@@ -31,7 +31,7 @@ if os.environ.get("SPOTIPY_CLIENT_SECRET", NOT_SET_VALUE) is NOT_SET_VALUE:
     os.environ['SPOTIPY_CLIENT_SECRET'] = client_secret
 
 logger = logging.getLogger('update_played')
-logger.setLevel(logging_level)
+logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(name)s - %(asctime)s (%(levelname)s): %(message)s')
 formatter.datefmt = '%Y-%m-%d %H:%M:%S %z'
 ch = logging.StreamHandler()
