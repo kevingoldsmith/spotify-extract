@@ -3,9 +3,10 @@ import configparser
 import os
 import spotipy
 import json
-import utils
 import sys
 import logging
+from etlutils.date import datetime_from_zulutime_string
+from etlutils.datafiles import get_monthly_file_path
 
 # string constant
 NOT_SET_VALUE = 'NOT SET'
@@ -64,7 +65,7 @@ while cursors is not None:
 grouped_tracks = {}
 for track in played_tracks:
     played_at_str = track['played_at']
-    played_at = utils.datetime_from_string(played_at_str)
+    played_at = datetime_from_zulutime_string(played_at_str)
     if not str(played_at.year) in grouped_tracks:
         grouped_tracks[str(played_at.year)] = {}
     if not str(played_at.month) in grouped_tracks[str(played_at.year)]:
@@ -78,7 +79,7 @@ for year in grouped_tracks.keys():
         old_tracks = []
 
         #load old tracks
-        filename = utils.get_monthly_filename('data', 'spotify_tracks', 'json', int(year), int(month))
+        filename = get_monthly_file_path('data', 'spotify_tracks', int(year), int(month))
         if os.path.exists(filename):
             logger.info('loading %s', filename)
             with open(filename, 'r') as f:
