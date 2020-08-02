@@ -84,7 +84,8 @@ for year in grouped_tracks.keys():
             logger.info('loading %s', filename)
             with open(filename, 'r') as f:
                 old_tracks = json.load(f)
-        
+            logger.info('loaded %d tracks from %s', len(old_tracks), filename)
+
         old_tracks.extend(new_tracks)
         track_dict = {}
         for track in old_tracks:
@@ -94,16 +95,5 @@ for year in grouped_tracks.keys():
             final_list.append(track_dict[played_time])
 
         with open(filename, 'w') as f:
-            logger.info('writing %s', filename)    
+            logger.info('writing %d tracks to %s', len(final_list), filename)
             f.write(json.dumps(final_list))
-
-
-""" tracks = {}
-
-with open('data/recent_tracks.json', 'r') as f:
-    tracks = json.load(f)
-
-# time is in UTC
-last_played_time = tracks['items'][:1][0]['played_at']
-print(last_played_time)
- """
