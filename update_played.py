@@ -8,6 +8,7 @@ import logging
 from etlutils.date import datetime_from_zulutime_string
 from etlutils.datafiles import get_monthly_file_path
 
+
 # string constant
 NOT_SET_VALUE = 'NOT SET'
 
