@@ -50,6 +50,16 @@ def get_played_tracks(timespan):
     return played_tracks
 
 
+def format_leading_zeros(number, maximum=10):
+    if maximum < 10:
+        return '{0}'.format(number)
+    elif maximum < 100:
+        return '{:02d}'.format(number)
+    elif maximum < 1000:
+        return '{:03d}'.format(number)
+    return '{:04d}'.format(number)
+
+
 parser = argparse.ArgumentParser(description="generate a report from saved Spotify plays")
 parser.add_argument('--span', help='set the timespan (day, week, month, year)', action='store', default='month', choices=['day', 'week', 'month', 'year'])
 parser.add_argument('--top', help='set the number for the artist/track/album count', action='store',    default=10, type=int)
@@ -83,15 +93,23 @@ sorted_track_items = sorted(track_items.items(), key=lambda pair: pair[1], rever
 album_items = Counter(album_list)
 sorted_album_items = sorted(album_items.items(), key=lambda pair: pair[1], reverse=True)
 
-print('ARTISTS')
+print(f'\n\nTOTAL PLAYED TRACKS: {len(played_tracks)}')
+
+print('\nARTISTS')
+count = 0
 for item in sorted_artist_items[:top_count]:
-    print(f"{artists[item[0]]['name']}, plays {item[1]}")
+    count+=1
+    print(f"{format_leading_zeros(count, top_count)}. {artists[item[0]]['name']}, plays {item[1]}")
 
 print('\n\nALBUMS')
+count = 0
 for item in sorted_album_items[:top_count]:
+    count+=1
     album = albums[item[0]]
-    print(f"{album['name']}, {album['artists'][0]['name']}, plays {item[1]}")
+    print(f"{format_leading_zeros(count, top_count)}. {album['name']}, {album['artists'][0]['name']}, plays {item[1]}")
 
 print('\n\nTRACKS')
+count = 0
 for item in sorted_track_items[:top_count]:
-    print(f"{tracks[item[0]]}, plays {item[1]}")
+    count+=1
+    print(f"{format_leading_zeros(count, top_count)}. {tracks[item[0]]}, plays {item[1]}")
