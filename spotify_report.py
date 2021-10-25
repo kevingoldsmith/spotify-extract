@@ -21,15 +21,22 @@ def get_played_tracks(timespan):
         print(timespan)
         return []
 
-    last_saved = datafiles.find_newest_saved_month('data', today.year, 'spotify_tracks')
-    filename = datafiles.get_monthly_file_path('data', 'spotify_tracks', last_saved[0], last_saved[1])
-
-    if os.path.exists(filename):
-        with open(filename, 'r') as f:
-            played_tracks = json.load(f)
-    else:
-        print(f'Error loading file {filename}')
-
+    played_tracks = []
+    current_month = start_day
+    filename = datafiles.get_monthly_file_path('data', 'spotify_tracks', current_month.year, current_month.month)
+    done = False
+    while not done:
+        if os.path.exists(filename):
+            with open(filename, 'r') as f:
+                print(f'loading: {filename}')
+                played_tracks.extend(json.load(f))
+        else:
+            print(f'Error loading file {filename}')
+        done = current_month.month == today.month and current_month.year == today.year
+        current_month = current_month + timedelta(days=31)
+        current_month = date(current_month.year,current_month.month, 1)
+        filename = datafiles.get_monthly_file_path('data', 'spotify_tracks', current_month.year, current_month.month)
+    
     return played_tracks
 
 
