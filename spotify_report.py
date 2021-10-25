@@ -1,10 +1,10 @@
 import argparse
 from collections import Counter
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 import json
 import os
 from etlutils import datafiles
-
+from etlutils.date import datetime_from_zulutime_string
 
 def get_played_tracks(timespan):
     today = date.today()
@@ -15,13 +15,13 @@ def get_played_tracks(timespan):
         start_day = date(today.year, today.month, 1)
     elif timespan == 'week':
         start_day = today - timedelta(days=(today.weekday()+1) % 7)
-    elif timespan == 'date':
+    elif timespan == 'day':
         start_day = today
     else:
         print(timespan)
         return []
 
-    played_tracks = []
+    loaded_tracks = []
     current_month = start_day
     filename = datafiles.get_monthly_file_path('data', 'spotify_tracks', current_month.year, current_month.month)
     done = False
@@ -29,36 +29,50 @@ def get_played_tracks(timespan):
         if os.path.exists(filename):
             with open(filename, 'r') as f:
                 print(f'loading: {filename}')
-                played_tracks.extend(json.load(f))
+                loaded_tracks.extend(json.load(f))
         else:
             print(f'Error loading file {filename}')
         done = current_month.month == today.month and current_month.year == today.year
         current_month = current_month + timedelta(days=31)
         current_month = date(current_month.year,current_month.month, 1)
         filename = datafiles.get_monthly_file_path('data', 'spotify_tracks', current_month.year, current_month.month)
+
+    if timespan == 'year' or timespan == 'month':
+        return loaded_tracks
+    
+    played_tracks = []
+    start_day_dt = datetime.combine(start_day, datetime.min.time())
+    for track in loaded_tracks:
+        track_dt = datetime_from_zulutime_string(track['played_at'])
+        if start_day_dt <= track_dt:
+            played_tracks.append(track)
     
     return played_tracks
 
 
 parser = argparse.ArgumentParser(description="generate a report from saved Spotify plays")
-parser.add_argument('--span', help='set the timespan (day, week, month, year)', action='store', nargs=1, default='month', choices=['day', 'week', 'month', 'year'])
-parser.add_argument('--top', help='set the number for the artist/track/album count', action='store', nargs=1, default=10, type=int)
+parser.add_argument('--span', help='set the timespan (day, week, month, year)', action='store', default='month', choices=['day', 'week', 'month', 'year'])
+parser.add_argument('--top', help='set the number for the artist/track/album count', action='store',    default=10, type=int)
 args = parser.parse_args()
-top_count = int(args.top[0])
-timespan = args.span[0]
+top_count = int(args.top)
+timespan = args.span
 
 played_tracks = get_played_tracks(timespan)
 
 artists = {}
 tracks = {}
+albums = {}
 artist_list = []
 track_list = []
+album_list = []
 for track in played_tracks:
     for artist in track['track']['artists']:
         artists[artist['id']] = artist
         artist_list.append(artist['id'])
     tracks[track['track']['id']] = track['track']['name']
+    albums[track['track']['album']['id']] = track['track']['album']
     track_list.append(track['track']['id'])
+    album_list.append(track['track']['album']['id'])
 
 artist_items = Counter(artist_list)
 sorted_artist_items = sorted(artist_items.items(), key=lambda pair: pair[1], reverse=True)
@@ -66,9 +80,17 @@ sorted_artist_items = sorted(artist_items.items(), key=lambda pair: pair[1], rev
 track_items = Counter(track_list)
 sorted_track_items = sorted(track_items.items(), key=lambda pair: pair[1], reverse=True)
 
+album_items = Counter(album_list)
+sorted_album_items = sorted(album_items.items(), key=lambda pair: pair[1], reverse=True)
+
 print('ARTISTS')
 for item in sorted_artist_items[:top_count]:
     print(f"{artists[item[0]]['name']}, plays {item[1]}")
+
+print('\n\nALBUMS')
+for item in sorted_album_items[:top_count]:
+    album = albums[item[0]]
+    print(f"{album['name']}, {album['artists'][0]['name']}, plays {item[1]}")
 
 print('\n\nTRACKS')
 for item in sorted_track_items[:top_count]:
