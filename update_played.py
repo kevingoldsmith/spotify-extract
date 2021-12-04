@@ -7,34 +7,17 @@ import sys
 import logging
 from etlutils.date import datetime_from_zulutime_string
 from etlutils.datafiles import get_monthly_file_path
-
-
-# string constant
-NOT_SET_VALUE = 'NOT SET'
+from spotipyinit import init_spotipy
 
 config_parser = configparser.ConfigParser()
-config_parser.read('config.ini')
-client_id = config_parser.get('Login Parameters', 'client_id', fallback=NOT_SET_VALUE)
-client_secret = config_parser.get('Login Parameters', 'client_secret', fallback=NOT_SET_VALUE)
-access_token = config_parser.get('Login Parameters', 'access_token', fallback=NOT_SET_VALUE)
-logging_level = config_parser.get('logging', 'logging_level', fallback=logging.INFO)
-logging_file = config_parser.get('logging', 'logging_file', fallback=None)
+config_parser.read('update-config.ini')
+logging_level = config_parser.get('Logging Parameters', 'logging_level', fallback=logging.INFO)
+logging_file = config_parser.get('Logging Parameters', 'logging_file', fallback=None)
 
-if os.environ.get("SPOTIPY_CLIENT_ID", NOT_SET_VALUE) is NOT_SET_VALUE:
-    if client_id is NOT_SET_VALUE:
-        print('ERROR: Environment variable is not set and client id not read from config file')
-        sys.exit(1)
-    os.environ['SPOTIPY_CLIENT_ID'] = client_id
-
-if os.environ.get("SPOTIPY_CLIENT_SECRET", NOT_SET_VALUE) is NOT_SET_VALUE:
-    if client_secret is NOT_SET_VALUE:
-        print('ERROR: Environment variable is not set and client secret not read from config file')
-        sys.exit(1)
-    os.environ['SPOTIPY_CLIENT_SECRET'] = client_secret
-
-logger = logging.getLogger('update_played')
+# initalize logging
+logger = logging.getLogger('root')
 logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(name)s - %(asctime)s (%(levelname)s): %(message)s')
+formatter = logging.Formatter('%(asctime)s - %(module)s - (%(levelname)s): %(message)s')
 formatter.datefmt = '%Y-%m-%d %H:%M:%S %z'
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
@@ -47,9 +30,7 @@ if logging_file:
     fh.setFormatter(formatter)
     logger.addHandler(fh)
 
-token = spotipy.util.prompt_for_user_token('intonarumori', 'user-library-read user-read-recently-played playlist-read-private playlist-read-collaborative user-top-read', client_id, client_secret, redirect_uri='https://127.0.0.1:8080')
-
-sp = spotipy.Spotify(auth=token)
+sp = init_spotipy()
 played_tracks = []
 results = sp.current_user_recently_played()
 played_tracks.extend(results['items'])
