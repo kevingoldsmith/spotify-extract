@@ -17,6 +17,10 @@ ids = []
 for track in old_tracks:
     ids.append(track['track']['id'])
 
-print(len(ids))
+requested_ids = ids[:30]
 
-trackdata.get_data_for_tracks(ids[:20], sp)
+print(f'requested data records: {len(requested_ids)}')
+
+test_data = trackdata.get_data_for_tracks(requested_ids, sp)
+
+print(f'returned data length: {len(test_data)}')
