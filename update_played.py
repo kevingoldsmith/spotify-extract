@@ -3,7 +3,6 @@ import configparser
 import os
 import spotipy
 import json
-import sys
 import logging
 from etlutils.date import datetime_from_zulutime_string
 from etlutils.datafiles import get_monthly_file_path
