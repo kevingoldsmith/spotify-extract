@@ -1,1 +1,1 @@
-jq .[].track.name data/2021/spotify_tracks_2021-08.json
+jq .[].track.name data/2022/spotify_tracks_2022-01.json

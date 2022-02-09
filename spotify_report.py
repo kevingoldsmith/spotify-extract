@@ -113,3 +113,9 @@ count = 0
 for item in sorted_track_items[:top_count]:
     count+=1
     print(f"{format_leading_zeros(count, top_count)}. {tracks[item[0]]}, plays {item[1]}")
+
+print('\n\nRECENT PLAYS')
+rp = played_tracks[-top_count:].copy()
+rp.reverse()
+for item in rp:
+    print(f"{item['track']['artists'][0]['name']} - {item['track']['name']}")
